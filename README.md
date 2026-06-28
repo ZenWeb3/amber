@@ -1,4 +1,4 @@
-markdown# amber
+amber
 
 a slack agent that learns to route questions across multiple mcp tools.
 
