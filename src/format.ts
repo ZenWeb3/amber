@@ -21,16 +21,17 @@ export function toSlackMrkdwn(md: string): string {
     return `\u0000IC${inlineCode.length - 1}\u0000`;
   });
 
-  // headings → bold line
+  // bold: **text** → *text*  (do this BEFORE italics)
+  s = s.replace(/\*\*([^\n]+?)\*\*/g, '*$1*');
+  // bold: __text__ → *text*
+  s = s.replace(/__([^\n]+?)__/g, '*$1*');
+
+  // headings → bold line (after bold normalization)
   s = s.replace(/^#{1,6}\s+(.+)$/gm, '*$1*');
 
-  // bold: **text** or __text__ → *text*
-  s = s.replace(/\*\*([^*\n]+)\*\*/g, '*$1*');
-  s = s.replace(/__([^_\n]+)__/g, '*$1*');
-
-  // italic: *text* or _text_ → _text_  (only if not already part of bold)
-  // gemini rarely uses single * for italic mid-text, so we keep this gentle
-  s = s.replace(/(?<![\*\w])\*([^\*\n]+)\*(?!\*)/g, '_$1_');
+  // italic _text_ → keep as-is (slack uses _ for italic)
+  // italic *text* → _text_  but only standalone single-* pairs
+  // (skipped — too risky to convert single-* without breaking already-converted bold)
 
   // strikethrough: ~~text~~ → ~text~
   s = s.replace(/~~([^~\n]+)~~/g, '~$1~');
@@ -40,8 +41,6 @@ export function toSlackMrkdwn(md: string): string {
 
   // bullets: "* " or "- " at line start → "• "
   s = s.replace(/^[\*\-]\s+/gm, '• ');
-
-  // numbered lists: keep as-is, slack renders them fine
 
   // restore inline code
   s = s.replace(/\u0000IC(\d+)\u0000/g, (_, i) => inlineCode[+i]);
